@@ -188,7 +188,7 @@ class NeoBeam:
         beams = []
         # ビーム数に応じてステップを計算
         if self.num == 1:
-            step = 0
+            step = [0]
         else:
             step = 100 // (self.num - 1)  # -50から+50の範囲を等分割
         
