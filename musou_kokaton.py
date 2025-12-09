@@ -297,7 +297,7 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 10000
+        self.value = 0
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -435,7 +435,8 @@ def main():
                     neo_beam = NeoBeam(bird, 5)
                     beams.add(*neo_beam.gen_beams())
                 else:
-                    beams.add(Beam(bird))
+                    # beams.add(Beam(bird))
+                    pass
         screen.blit(bg_img, [0, 0])
         gravitys.update()  # 追加2
         gravitys.draw(screen)  # 追加2
