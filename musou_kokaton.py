@@ -13,9 +13,9 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
-    オブジェクトが画面内or画面外を判定し，真理値タプルを返す関数
-    引数：こうかとんや爆弾，ビームなどのRect
-    戻り値：横方向，縦方向のはみ出し判定結果（画面内：True／画面外：False）
+    オブジェクトが画面内or画面外を判定し,真理値タプルを返す関数
+    引数：こうかとんや爆弾,ビームなどのRect
+    戻り値：横方向,縦方向のはみ出し判定結果（画面内：True/画面外：False）
     """
     yoko, tate = True, True
     if obj_rct.left < 0 or WIDTH < obj_rct.right:
@@ -27,7 +27,7 @@ def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
 
 def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
     """
-    orgから見て，dstがどこにあるかを計算し，方向ベクトルをタプルで返す
+    orgから見て,dstがどこにあるかを計算し,方向ベクトルをタプルで返す
     引数1 org：爆弾SurfaceのRect
     引数2 dst：こうかとんSurfaceのRect
     戻り値：orgから見たdstの方向ベクトルを表すタプル
@@ -171,14 +171,16 @@ class Beam(pg.sprite.Sprite):
     """
     ビームに関するクラス
     """
-    def __init__(self, bird: Bird):
+    def __init__(self, bird: Bird, angle0: float=0):
         """
         ビーム画像Surfaceを生成する
-        引数 bird：ビームを放つこうかとん
+        引数1 bird：ビームを放つこうかとん
+        引数2 angle0 : ビームの回転角度
         """
         super().__init__()
         self.vx, self.vy = bird.dire
         angle = math.degrees(math.atan2(-self.vy, self.vx))
+        angle += angle0 # 追加の回転角度に加算
         self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
@@ -196,7 +198,38 @@ class Beam(pg.sprite.Sprite):
         if check_bound(self.rect) != (True, True):
             self.kill()
 
-
+class NeoBeam:
+    """
+    複数方向のビームを生成するクラス
+    """
+    def __init__(self, bird: Bird, num: int):
+        """
+        引数1 bird：ビームを放つこうかとん
+        引数2 num：ビームの数
+        """
+        self.bird = bird
+        self.num = num
+    
+    def gen_beams(self) -> list[Beam]:
+        """
+        複数方向のビームを生成する
+        戻り値：Beamインスタンスのリスト
+        """
+        beams = []
+        # ビーム数に応じてステップを計算
+        if self.num == 1:
+            step = [0]
+        else:
+            step = 100 // (self.num - 1)  # -50から+50の範囲を等分割
+        
+        # -50から+50の範囲で指定された数のビームを生成
+        for angle in range(-50, 51, step):
+            beams.append(Beam(self.bird, angle))
+            if len(beams) >= self.num:  # 指定された数に達したら終了
+                break
+        
+        return beams
+ 
 class Explosion(pg.sprite.Sprite):
     """
     爆発に関するクラス
@@ -246,7 +279,7 @@ class Enemy(pg.sprite.Sprite):
     def update(self):
         """
         敵機を速度ベクトルself.vyに基づき移動（降下）させる
-        ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
+        ランダムに決めた停止位置_boundまで降下したら,_stateを停止状態に変更する
         引数 screen：画面Surface
         """
         if self.rect.centery > self.bound:
@@ -397,6 +430,12 @@ def main():
                     if score.value >= EMP_COST:
                         score.value -= EMP_COST
                         emps.add(EMP(emys, bombs, screen, 3))
+                # 左Shiftキーが押されている場合は弾幕（5本のビーム）
+                if key_lst[pg.K_LSHIFT]:
+                    neo_beam = NeoBeam(bird, 5)
+                    beams.add(*neo_beam.gen_beams())
+                else:
+                    beams.add(Beam(bird))
         screen.blit(bg_img, [0, 0])
         gravitys.update()  # 追加2
         gravitys.draw(screen)  # 追加2
